@@ -3,8 +3,8 @@ services:
     build:
       context: .
       args:
-        SPIKE_RT_REPO: ${SPIKE_RT_REPO:-https://github.com/ETrobocon/spike-rt-RasPike-ART.git}
-        SPIKE_RT_REF: ${SPIKE_RT_REF:-main}
+        SPIKE_RT_REPO: ${SPIKE_RT_REPO:-https://github.com/shimojima/spike-rt.git}
+        SPIKE_RT_REF: ${SPIKE_RT_REF:-etrobo}
     image: etrobo-basic-builder:latest
     # ルートのMakefileを既定で参照できるようにする
     working_dir: /workspace

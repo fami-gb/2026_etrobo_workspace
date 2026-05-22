@@ -2,8 +2,8 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-ARG SPIKE_RT_REPO=https://github.com/ETrobocon/spike-rt-RasPike-ART.git
-ARG SPIKE_RT_REF=main
+ARG SPIKE_RT_REPO=https://github.com/shimojima/spike-rt.git
+ARG SPIKE_RT_REF=etrobo
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
