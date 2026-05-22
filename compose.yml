@@ -1,0 +1,15 @@
+services:
+  builder:
+    build:
+      context: .
+      args:
+        SPIKE_RT_REPO: ${SPIKE_RT_REPO:-https://github.com/ETrobocon/spike-rt-RasPike-ART.git}
+        SPIKE_RT_REF: ${SPIKE_RT_REF:-main}
+    image: etrobo-basic-builder:latest
+    # ルートのMakefileを既定で参照できるようにする
+    working_dir: /workspace
+    volumes:
+      # ルートMakefileと関連ファイルを参照するため、リポジトリ全体をマウント
+      - ./:/workspace
+      # appフォルダのみをworkspace配下にマウント
+      - ./app:/opt/spike-rt/sdk/workspace/${APP_IMG:-kait-etrobocon2026}
