@@ -6,27 +6,27 @@ QUIET ?= 1
 BUILD_LOG ?= build.log
 IN_DOCKER := $(shell [ -f /.dockerenv ] && echo 1 || echo 0)
 SPIKE_WORKSPACE_DIR := /opt/spike-rt/sdk/workspace
+UPLOAD_SERVICE ?= uploader
+UPLOAD_DO_BUILD ?= 1
 
-.PHONY: help build img clean realclean distclean upload
+.PHONY: help build img clean upload upload-nobuild _upload_impl
 
 help:
-	@echo "Usage:"
+	@echo "コマンド一覧:"
 	@echo "  make build                asp.binを作る"
-	@echo "  make clean                app/build配下の生成物を消す"
-	@echo "  make realclean            appとカーネル関連の生成物を消す"
-	@echo "  make distclean            ワークスペース全体の生成物を消す"
-	@echo "  make upload               DFUモードでasp.binをハブにアップロードする"
+	@echo "  make clean                build配下の生成物を消す"
+	@echo "  make upload               USB attach後にbuild+DFUアップロードする"
+	@echo "  make upload-nobuild       既存asp.binを使ってDFUアップロードする"
 	@echo ""
-	@echo "Variables:"
-	@echo "  APP_IMG=<folder>          sdk/workspace内のappマウントフォルダ名"
+	@echo "変数:"
 	@echo "  QUIET=1|0                 1で簡易表示（既定）、0で詳細ログ表示"
 	@echo "  BUILD_LOG=<path>          QUIET=1時のログ出力先（既定: build.log）"
 	@echo ""
-	@echo "Examples:"
-	@echo "  make build"
-	@echo "  QUIET=0 make build"
-	@echo "  APP_IMG=myapp make build"
-	@echo "  docker compose run --rm builder make img=kait-etrobocon2026"
+	@echo "使い方:"
+	@echo "  ビルドする				: make build"
+	@echo "  ビルドログの詳細を表示する		: QUIET=0 make build"
+	@echo "  SPIKEにbuild+uploadする		: make upload"
+	@echo "  既存asp.binをuploadする		: make upload-nobuild"
 
 build:
 	@echo "building..."
@@ -60,23 +60,47 @@ clean:
 		APP_IMG=$(APP_IMG) $(DOCKER_COMPOSE) run --rm builder make clean; \
 	fi
 
-realclean:
-	@if [ "$(IN_DOCKER)" = "1" ]; then \
-		$(MAKE) -C $(SPIKE_WORKSPACE_DIR) realclean; \
-	else \
-		APP_IMG=$(APP_IMG) $(DOCKER_COMPOSE) run --rm builder make realclean; \
-	fi
-
-distclean:
-	@if [ "$(IN_DOCKER)" = "1" ]; then \
-		$(MAKE) -C $(SPIKE_WORKSPACE_DIR) distclean; \
-	else \
-		APP_IMG=$(APP_IMG) $(DOCKER_COMPOSE) run --rm builder make distclean; \
-	fi
-
 upload:
+	@$(MAKE) _upload_impl UPLOAD_DO_BUILD=1
+
+upload-nobuild:
+	@$(MAKE) _upload_impl UPLOAD_DO_BUILD=0
+
+_upload_impl:
+	@echo "Uploading to SPIKE..."
 	@if [ "$(IN_DOCKER)" = "1" ]; then \
-		$(MAKE) -C $(SPIKE_WORKSPACE_DIR) upload; \
-	else \
-		APP_IMG=$(APP_IMG) $(DOCKER_COMPOSE) run --rm builder make upload; \
+		if [ ! -d /dev/bus/usb ]; then \
+			echo "USBバスが見つかりません。uploader serviceで実行してください。"; \
+			exit 2; \
+		fi; \
+		usb_nodes=$$(find /dev/bus/usb -mindepth 2 -maxdepth 2 -type c | wc -l); \
+		if [ "$$usb_nodes" -eq 0 ]; then \
+			echo "USBデバイスノードが見つかりません。コンテナ内から attach はできないため、ホスト側で先に usb-setup.sh を実行してください。" >&2; \
+			ls -la /dev/bus/usb >&2 || true; \
+			exit 2; \
+		fi; \
+		echo "USB preflight: $$usb_nodes node(s) detected under /dev/bus/usb"; \
+		if [ "$(UPLOAD_DO_BUILD)" = "1" ]; then \
+			$(MAKE) -C $(SPIKE_WORKSPACE_DIR) img=$(APP_IMG) > /dev/null 2>&1; \
+		else \
+			if [ ! -f "$(SPIKE_WORKSPACE_DIR)/asp.bin" ]; then \
+				echo "ERROR: $(SPIKE_WORKSPACE_DIR)/asp.bin が見つかりません。先に make build を実行してください。" >&2; \
+				exit 4; \
+			fi; \
+		fi; \
+		upload_log=$$(mktemp); \
+		$(MAKE) -C $(SPIKE_WORKSPACE_DIR) upload > $$upload_log 2>&1; \
+		upload_status=$$?; \
+		if grep -qi "No DFU device found" $$upload_log; then \
+			echo "ERROR: DFUデバイスが見つかりません。ハブをDFUモードにして再実行してください。" >&2; \
+			rm -f $$upload_log; \
+			exit 3; \
+		fi; \
+		if [ $$upload_status -ne 0 ]; then \
+			echo "ERROR: spike-rt upload に失敗しました。" >&2; \
+			tail -n 80 $$upload_log >&2 || true; \
+			rm -f $$upload_log; \
+			exit $$upload_status; \
+		fi; \
+		rm -f $$upload_log; \
 	fi

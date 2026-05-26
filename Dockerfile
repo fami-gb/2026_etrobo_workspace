@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnewlib-arm-none-eabi \
     libstdc++-arm-none-eabi-newlib \
     python3 \
+    python3-usb \
+    libusb-1.0-0 \
     ruby \
     make \
     && rm -rf /var/lib/apt/lists/*
