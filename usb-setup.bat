@@ -29,10 +29,7 @@ if errorlevel 1 (
 
 echo LEGO 名を含むUSBデバイスを自動検出します...
 set "USB_BUSID="
-for /f "usebackq delims=" %%I in (`%POWERSHELL_BIN% -NoProfile -NonInteractive -Command "$ErrorActionPreference='Stop'; $state = usbipd state ^| ConvertFrom-Json; $lego = @($state.Devices ^| Where-Object { $_.Description -match 'LEGO' } ^| Sort-Object BusId); if ($lego.Count -eq 0) { Write-Error 'Description に LEGO を含むUSBデバイスが見つかりませんでした。'; exit 3 }; $dfu = @($lego ^| Where-Object { $_.Description -match 'DFU' }); $selected = if ($dfu.Count -gt 0) { $dfu[0] } else { $lego[0] }; if ($lego.Count -gt 1) { [Console]::Error.WriteLine('複数のLEGOデバイスが見つかりました。DFU優先で先頭を使用します。'); foreach ($d in $lego) { [Console]::Error.WriteLine('  ' + $d.BusId + ' ' + $d.Description) }; [Console]::Error.WriteLine('selected: ' + $selected.BusId) }; [Console]::WriteLine($selected.BusId)"`) do if not "%%I"=="" if not defined USB_BUSID set "USB_BUSID=%%I"
-
-echo %USB_BUSID% | findstr /R "^[0-9][0-9]*-[0-9][0-9]*$" >nul
-if errorlevel 1 set "USB_BUSID="
+for /f "usebackq delims=" %%I in (`%POWERSHELL_BIN% -NoProfile -NonInteractive -File "%SCRIPT_DIR%usb-detect-busid.ps1"`) do if not "%%I"=="" if not defined USB_BUSID set "USB_BUSID=%%I"
 
 if not defined USB_BUSID (
     >&2 echo BUSID自動検出に失敗しました。LEGOデバイスを接続しDFUモードを確認してください。
