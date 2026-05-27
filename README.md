@@ -1,4 +1,4 @@
-# Lightweight SPIKE-RT Build Environment
+# Dockerによる環境構築とmakeコマンドの使い方
 
 このリポジトリは、ETロボコン向けにリポジトリルートをアプリ配置として開発し、
 ルートの独自 `Makefile` から `asp.bin` を生成できるようにした構成です。
@@ -64,14 +64,14 @@ QUIET=0 make build
 
 下記のコマンドは 2 と同じようにコンテナの中で実行しますが、`uploader`というserviceを使います。
 
-また、実機へのアップロードを行う前に必ず`usb-setup.sh`を実行してください。
+また、実機へのアップロードを行う前に必ず`usb-setup.bat`を実行してください。
+実行には以下のコマンドか、直接バッチファイルをダブルクリックで実行してください。
 
 ```bash
-sh ./usb-setup.sh
+cmd /c ./usb-setup.sh
 ```
 
-`make upload` は Windows ホスト時に USB attach を自動実行した後、
-コンテナ内で `build` と `upload` を連続実行します。
+`make upload` はコンテナ内で `build` と `upload` を連続実行します。
 
 ```bash
 docker compose run --rm uploader make upload
@@ -92,8 +92,7 @@ docker compose run --rm uploader make upload-nobuild
 理由は、通常ビルドに `privileged` と USB マウントを持ち込まないためです。  
 
 Windows + Docker Desktop の場合、USB デバイスを Linux 側へアタッチしていないと コンテナからは見えません。  
-WindowsからDockerコンテナ(WSL)へのUSBのアタッチは、`usb-setup.sh`を利用します。  
-
+WindowsからDockerコンテナ(WSL)へのUSBのアタッチは、`usb-setup.bat`を利用します。  
 `usbipd state` から Description に `LEGO` を含むデバイスを自動選択して、bind/attach した後、コンテナ内アップロードを実行します。
 
 ## make img
