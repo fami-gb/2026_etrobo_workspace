@@ -106,6 +106,8 @@ _upload_impl:
 			tail -n 80 $$upload_log >&2 || true; \
 			rm -f $$upload_log; \
 			exit $$upload_status; \
+		else \
+			echo "実機へのアップロードに成功しました。"; \
 		fi; \
 		rm -f $$upload_log; \
 	fi
