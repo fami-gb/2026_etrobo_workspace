@@ -81,7 +81,12 @@ _upload_impl:
 		fi; \
 		echo "USB preflight: $$usb_nodes node(s) detected under /dev/bus/usb"; \
 		if [ "$(UPLOAD_DO_BUILD)" = "1" ]; then \
-			$(MAKE) -C $(SPIKE_WORKSPACE_DIR) img=$(APP_IMG) > /dev/null 2>&1; \
+			echo "先にビルドを行います"; \
+			$(MAKE) --no-print-directory build || { \
+				status=$$?; \
+				echo "ERROR: buildに失敗したためuploadを中止しました。" >&2; \
+				exit $$status; \
+			}; \
 		else \
 			if [ ! -f "$(SPIKE_WORKSPACE_DIR)/asp.bin" ]; then \
 				echo "ERROR: $(SPIKE_WORKSPACE_DIR)/asp.bin が見つかりません。先に make build を実行してください。" >&2; \
