@@ -1,0 +1,32 @@
+services:
+  # build専用: 通常開発ではUSBデバイス権限を持たせない
+  builder:
+    build:
+      context: .
+      args:
+        SPIKE_RT_REPO: ${SPIKE_RT_REPO:-https://github.com/shimojima/spike-rt.git}
+        SPIKE_RT_REF: ${SPIKE_RT_REF:-etrobo}
+    image: etrobo-basic-builder:latest
+    # マウント先のプロジェクトルート(独自Makefile)を既定作業場所にする
+    tty: true
+    working_dir: /opt/spike-rt/sdk/workspace/${APP_IMG:-kait-etrobocon2026}
+    volumes:
+      # プロジェクトルートをspike-rtのworkspace配下にのみマウント
+      - ./:/opt/spike-rt/sdk/workspace/${APP_IMG:-kait-etrobocon2026}
+
+  # upload専用: USBデバイスアクセスを許可する（least privilege維持のため分離）
+  uploader:
+    build:
+      context: .
+      args:
+        SPIKE_RT_REPO: ${SPIKE_RT_REPO:-https://github.com/shimojima/spike-rt.git}
+        SPIKE_RT_REF: ${SPIKE_RT_REF:-etrobo}
+    image: etrobo-basic-builder:latest
+    tty: true
+    working_dir: /opt/spike-rt/sdk/workspace/${APP_IMG:-kait-etrobocon2026}
+    privileged: true
+    device_cgroup_rules:
+      - "c 189:* rmw"
+    volumes:
+      - ./:/opt/spike-rt/sdk/workspace/${APP_IMG:-kait-etrobocon2026}
+      - /dev/bus/usb:/dev/bus/usb
