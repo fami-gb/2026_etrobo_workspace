@@ -62,9 +62,7 @@ QUIET=0 make build
 
 ## 3) 実機にasp.binをアップロード
 
-下記のコマンドは 2 と同じようにコンテナの中で実行しますが、`uploader`というserviceを使います。
-
-また、実機へのアップロードを行う前に必ず`usb-setup.bat`を実行してください。
+実機へのアップロードを行う前に必ず`usb-setup.bat`を実行してください。
 実行には以下のコマンドか、直接バッチファイルをダブルクリックで実行してください。
 
 ```bash
@@ -74,7 +72,7 @@ cmd /c ./usb-setup.sh
 `make upload` はコンテナ内で `build` と `upload` を連続実行します。
 
 ```bash
-docker compose run --rm uploader make upload
+docker compose run --rm builder make upload
 ```
 
 `make upload-nobuild` は `asp.bin` が既に生成済みのときに、
@@ -82,23 +80,8 @@ docker compose run --rm uploader make upload
 `/opt/spike-rt/sdk/workspace/asp.bin` が無い場合は即エラー終了します。
 
 ```bash
-docker compose run --rm uploader make upload-nobuild
+docker compose run --rm builder make upload-nobuild
 ```
-
-`make upload` 実行時は、通常の `builder` ではなく USB パススルー有効な
-`uploader` service を使います（`privileged` + `/dev/bus/usb` マウント）。  
-
-このリポジトリでは `builder` と `uploader` を分離したまま運用します。  
-理由は、通常ビルドに `privileged` と USB マウントを持ち込まないためです。  
 
 Windows + Docker Desktop の場合、USB デバイスを Linux 側へアタッチしていないと コンテナからは見えません。  
-WindowsからDockerコンテナ(WSL)へのUSBのアタッチは、`usb-setup.bat`を利用します。  
-`usbipd state` から Description に `LEGO` を含むデバイスを自動選択して、bind/attach した後、コンテナ内アップロードを実行します。
-
-## make img
-
-例:
-
-```bash
-APP_IMG=myapp make build
-```
+そのため、WindowsからDockerコンテナ(WSL)へのUSBのアタッチは、`usb-setup.bat`を利用します。  

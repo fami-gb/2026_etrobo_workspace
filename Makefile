@@ -6,7 +6,6 @@ QUIET ?= 1
 BUILD_LOG ?= build.log
 IN_DOCKER := $(shell [ -f /.dockerenv ] && echo 1 || echo 0)
 SPIKE_WORKSPACE_DIR := /opt/spike-rt/sdk/workspace
-UPLOAD_SERVICE ?= uploader
 UPLOAD_DO_BUILD ?= 1
 
 .PHONY: help build img clean upload upload-nobuild _upload_impl
@@ -70,7 +69,7 @@ _upload_impl:
 	@echo "Uploading to SPIKE..."
 	@if [ "$(IN_DOCKER)" = "1" ]; then \
 		if [ ! -d /dev/bus/usb ]; then \
-			echo "USBバスが見つかりません。uploader serviceで実行してください。"; \
+			echo "USBバスが見つかりません。"; \
 			exit 2; \
 		fi; \
 		usb_nodes=$$(find /dev/bus/usb -mindepth 2 -maxdepth 2 -type c | wc -l); \
@@ -110,4 +109,7 @@ _upload_impl:
 			echo "実機へのアップロードに成功しました。"; \
 		fi; \
 		rm -f $$upload_log; \
+	else \
+		APP_IMG=$(APP_IMG) QUIET=$(QUIET) BUILD_LOG=$(BUILD_LOG) \
+		$(DOCKER_COMPOSE) run --rm builder make _upload_impl UPLOAD_DO_BUILD=$(UPLOAD_DO_BUILD); \
 	fi
