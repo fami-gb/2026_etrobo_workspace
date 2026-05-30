@@ -20,7 +20,7 @@ if errorlevel 1 (
 
 echo LEGO USBデバイスを検出中...
 set "USB_BUSID="
-for /f "usebackq delims=" %%I in (`%POWERSHELL_BIN% -NoProfile -NonInteractive -Command "$d=(usbipd state|ConvertFrom-Json).Devices|Where-Object{$_.Description -match 'LEGO|DFU|SPIKE|MINDSTORMS' -or $_.InstanceId -match 'VID_0694'}|Sort-Object BusId; if(-not $d){exit 3}; $s=@($d|Where-Object{$_.Description -match 'DFU'}); if($s){$s[0].BusId}else{$d[0].BusId}"`) do if not "%%I"=="" if not defined USB_BUSID set "USB_BUSID=%%I"
+for /f "usebackq delims=" %%I in (`%POWERSHELL_BIN% -NoProfile -NonInteractive -Command "$d=(usbipd state|ConvertFrom-Json).Devices|Where-Object{($_.Description -match 'LEGO|DFU|SPIKE|MINDSTORMS' -or $_.InstanceId -match 'VID_0694') -and $_.BusId}|Sort-Object BusId; if(-not $d){exit 3}; $s=@($d|Where-Object{$_.Description -match 'DFU'}); if($s){$s[0].BusId}else{$d[0].BusId}"`) do if not "%%I"=="" if not defined USB_BUSID set "USB_BUSID=%%I"
 
 if not defined USB_BUSID (
     >&2 echo BUSID自動検出に失敗しました。LEGOデバイスを接続しDFUモードを確認してください。
