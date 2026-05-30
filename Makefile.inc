@@ -11,7 +11,7 @@ APPL_DIRS += $(sort $(dir $(APP_CPP_PATHS)))
 APPL_CXXFLAGS += -std=gnu++17 -O2
 
 # 自作ヘッダのパス
-INCLUDES += \ 
+INCLUDES += \
     -I$(mkfile_path)include \
     -I$(mkfile_path)src \
     -I$(mkfile_path)external/drivers \
